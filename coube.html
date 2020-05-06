@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+
+<head>
+	<meta charset="utf-8" />
+	<link rel="stylesheet" href="css/bootstrap.css" type="text/css">
+	<script type="text/javascript" src="js/d3.js">
+	</script>
+
+	<style>
+		.line1 {
+			fill: none;
+			stroke: green;
+			stroke-width: 1.5px
+		}
+
+		.line2 {
+			fill: none;
+			stroke: red;
+			stroke-width: 1.5px
+		}
+
+		.axis {
+			font: 10px sans-serif;
+		}
+
+		.axis path,
+		.axis line {
+			fill: none;
+			stroke: #0000CD;
+			shape-rendering: crispEdges;
+		}
+	</style>
+
+
+</head>
+
+<body>
+	<div>
+		<h4>Evolution de la mortalité infantile dans l'espace CEDEAO</h4>
+		<form>
+			<label>Selectionner un pole :</label>
+			<select id="choix" onchange="choice()">
+				<option>Choisir une option</option>
+				<option>1990</option>
+				<option>1995</option>
+				<option>2000</option>
+				<option>2005</option>
+				<option>2010</option>
+				<option>2012</option>
+			</select>
+		</form>
+		<br />
+		<div id="msda" width="1000" height="300"></div>
+	</div>
+
+	<script>
+
+		function choice() {
+			var courbe = d3.select("#msda");
+			var mortalite = courbe.selectAll('*');
+			mortalite.remove();
+
+			var margin = { top: 0, right: 170, bottom: 200, left: 70 },
+				width = 1000 - margin.left - margin.right,
+				height = 550 - margin.top - margin.bottom;
+			var visual = d3.select("#msda")
+				.append("svg")
+				.attr("width", width + margin.left + margin.right)
+				.attr("height", height + margin.top + margin.bottom)
+				.append("g")
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+			var an = document.getElementById('choix').selectedOptions[0].text;
+			d3.csv("donnees.csv", function (error, data) {
+				data = data.filter(function (d) { return d.annees == an })
+				console.log(data)
+				data.forEach(function (d) {
+					d.Value = +d.Value;
+					d.pays = d.pays;
+					d.annees = +d.annees;
+				});
+
+
+
+				A = d3.scale.ordinal().rangeRoundBands([0, width], 0.1)
+					.domain(
+						data.map(function (d) {
+							return d.pays;
+						})
+					);
+
+				B = d3.scale.linear()
+					.range([height, 0])
+					.domain([0, d3.max(data, function (d) { return (d.Value); })]);
+
+				var xAxis = d3.svg.axis().scale(A).orient("bottom");
+
+				var yAxis = d3.svg.axis().scale(B).orient("left");
+
+				visual.append("g")
+					.attr("class", "x axis")
+					.attr("transform", "translate(0," + height + ")")
+					.call(xAxis)
+					.selectAll("text")
+					.style("font-size", "14px")
+					.style("text-anchor", "end")
+					.attr("dx", "-.8em")
+					.attr("dy", "-.55em")
+					.attr("transform", "rotate(-60)");
+				visual.append("g")
+					.attr("class", "y axis")
+					.call(yAxis);
+
+				var valueline = d3.svg.line()
+					.x(function (d, i) { return i * 52; })
+					.y(function (d) { return B(d.Value); });
+
+
+				var path = visual.append('svg:path')
+					.attr("class", "line1")
+					.attr("d", valueline(data))
+
+
+			});
+		}
+	</script>
+
+</body>
+
+</html>
